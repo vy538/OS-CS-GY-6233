@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     }
 
     /*-----------start-----------*/
-    pthread_spin_init(&lock, NULL);
+    pthread_spin_init(&lock, 0);
     /*----------- end -----------*/
 
     srandom(time(NULL));
