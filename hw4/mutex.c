@@ -37,10 +37,12 @@ void insert(int key, int val) {
     int i = key % NUM_BUCKETS;
     bucket_entry *e = (bucket_entry *) malloc(sizeof(bucket_entry));
     if (!e) panic("No memory to allocate bucket!");
+    pthread_mutex_lock(&lock);//new added
     e->next = table[i];
     e->key = key;
     e->val = val;
     table[i] = e;
+    pthread_mutex_unlock(&lock);//new added
 }
 
 // Retrieves an entry from the hash table by key
@@ -60,11 +62,7 @@ void * put_phase(void *arg) {
     // If there are k threads, thread i inserts
     //      (i, i), (i+k, i), (i+k*2)
     for (key = tid ; key < NUM_KEYS; key += num_threads) {
-        /*-----------start-----------*/
-        pthread_mutex_lock(&lock);
         insert(keys[key], tid);
-        pthread_mutex_unlock(&lock);
-        /*----------- end -----------*/
     }
 
     pthread_exit(NULL);
