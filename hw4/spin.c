@@ -142,3 +142,11 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+/*
+Q2:
+spin time: 2.539913
+mutex time: 2.738819
+At first, I thought mutex will be faster, and discovered that sleeping and waking the threads are expensive. 
+If the threads is locked for very short time, spending time on waking them up or put them to sleep is unworthy.
+*/
