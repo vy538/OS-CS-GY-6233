@@ -11,6 +11,8 @@ int num_threads = 1;      // Number of threads (configurable)
 int keys[NUM_KEYS];
 /*-----------start-----------*/
 pthread_mutex_t lock[NUM_BUCKETS];
+pthread_mutex_t x;
+int readCount;
 /*----------- end -----------*/
 
 typedef struct _bucket_entry {
@@ -48,10 +50,23 @@ void insert(int key, int val) {
 // Retrieves an entry from the hash table by key
 // Returns NULL if the key isn't found in the table
 bucket_entry * retrieve(int key) {
+    /*-----------start-----------*/
+    int i = key % NUM_BUCKETS;
+    pthread_mutex_lock(&x);
+    readCount++;
+    if(readCount == 1) pthread_mutex_lock(&lock[i]);
+    pthread_mutex_unlock(&x);
+    /*----------- end -----------*/
     bucket_entry *b;
     for (b = table[key % NUM_BUCKETS]; b != NULL; b = b->next) {
         if (b->key == key) return b;
     }
+    /*-----------start-----------*/
+    pthread_mutex_lock(&x);
+    readCount--;
+    if(readCount == 0) pthread_mutex_unlock(&lock[i]);
+    pthread_mutex_unlock(&x);
+    /*----------- end -----------*/
     return NULL;
 }
 
@@ -97,6 +112,8 @@ int main(int argc, char **argv) {
     for(i=0;i<NUM_BUCKETS;i++){
         pthread_mutex_init(&lock[i], NULL);
     }
+    pthread_mutex_init(&x,NULL);
+    readCount = 1;
     /*----------- end -----------*/
 
     srandom(time(NULL));
