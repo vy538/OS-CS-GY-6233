@@ -10,7 +10,7 @@
 int num_threads = 1;      // Number of threads (configurable)
 int keys[NUM_KEYS];
 /*-----------start-----------*/
-pthread_mutex_t lock;
+pthread_mutex_t lock[NUM_BUCKETS];
 /*----------- end -----------*/
 
 typedef struct _bucket_entry {
@@ -37,12 +37,12 @@ void insert(int key, int val) {
     int i = key % NUM_BUCKETS;
     bucket_entry *e = (bucket_entry *) malloc(sizeof(bucket_entry));
     if (!e) panic("No memory to allocate bucket!");
-    pthread_mutex_lock(&lock);//new added
+    pthread_mutex_lock(&lock[i]);//new added
     e->next = table[i];
     e->key = key;
     e->val = val;
     table[i] = e;
-    pthread_mutex_unlock(&lock);//new added
+    pthread_mutex_unlock(&lock[i]);//new added
 }
 
 // Retrieves an entry from the hash table by key
@@ -94,7 +94,9 @@ int main(int argc, char **argv) {
     }
 
     /*-----------start-----------*/
-    pthread_mutex_init(&lock, NULL);
+    for(i=0;i<NUM_BUCKETS;i++){
+        pthread_mutex_init(&lock[i], NULL);
+    }
     /*----------- end -----------*/
 
     srandom(time(NULL));
