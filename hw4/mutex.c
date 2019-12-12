@@ -11,8 +11,8 @@ int num_threads = 1;      // Number of threads (configurable)
 int keys[NUM_KEYS];
 /*-----------start-----------*/
 pthread_mutex_t lock[NUM_BUCKETS];
-pthread_mutex_t x;
-int readCount;
+pthread_mutex_t x[NUM_BUCKETS];
+int readCount[NUM_BUCKETS];
 /*----------- end -----------*/
 
 typedef struct _bucket_entry {
@@ -52,20 +52,32 @@ void insert(int key, int val) {
 bucket_entry * retrieve(int key) {
     /*-----------start-----------*/
     int i = key % NUM_BUCKETS;
-    pthread_mutex_lock(&x);
-    readCount++;
-    if(readCount == 1) pthread_mutex_lock(&lock[i]);
-    pthread_mutex_unlock(&x);
+    pthread_mutex_lock(&x[i]);
+    // printf("A-- num: %d has readCount: %d\n",i,readCount[i]);
+    readCount[i]++;
+    if(readCount[i] == 1) pthread_mutex_lock(&lock[i]);
+    // printf("B-- num: %d has readCount: %d\n",i,readCount[i]);
+    pthread_mutex_unlock(&x[i]);
     /*----------- end -----------*/
     bucket_entry *b;
     for (b = table[key % NUM_BUCKETS]; b != NULL; b = b->next) {
-        if (b->key == key) return b;
+        if (b->key == key){
+            /*-----------start-----------*/
+            pthread_mutex_lock(&x[i]);
+             // printf("C-- num: %d has readCount: %d\n",i,readCount[i]);
+            readCount[i]--;
+            if(readCount[i] == 0) pthread_mutex_unlock(&lock[i]);
+             // printf("D-- num: %d has readCount: %d\n",i,readCount[i]);
+            pthread_mutex_unlock(&x[i]);
+            /*----------- end -----------*/
+           return b; 
+        } 
     }
     /*-----------start-----------*/
-    pthread_mutex_lock(&x);
-    readCount--;
-    if(readCount == 0) pthread_mutex_unlock(&lock[i]);
-    pthread_mutex_unlock(&x);
+    pthread_mutex_lock(&x[i]);
+    readCount[i]--;
+    if(readCount[i] == 0) pthread_mutex_unlock(&lock[i]);
+    pthread_mutex_unlock(&x[i]);
     /*----------- end -----------*/
     return NULL;
 }
@@ -111,9 +123,9 @@ int main(int argc, char **argv) {
     /*-----------start-----------*/
     for(i=0;i<NUM_BUCKETS;i++){
         pthread_mutex_init(&lock[i], NULL);
+        pthread_mutex_init(&x[i], NULL);
+        readCount[i] = 0;
     }
-    pthread_mutex_init(&x,NULL);
-    readCount = 1;
     /*----------- end -----------*/
 
     srandom(time(NULL));
