@@ -10,7 +10,7 @@
 int num_threads = 1;      // Number of threads (configurable)
 int keys[NUM_KEYS];
 /*-----------start-----------*/
-pthread_spinlock_t lock;
+pthread_spinlock_t  lock[NUM_BUCKETS];
 /*----------- end -----------*/
 
 typedef struct _bucket_entry {
@@ -37,12 +37,12 @@ void insert(int key, int val) {
     int i = key % NUM_BUCKETS;
     bucket_entry *e = (bucket_entry *) malloc(sizeof(bucket_entry));
     if (!e) panic("No memory to allocate bucket!");
-    pthread_spin_lock(&lock);//new added
+    pthread_spin_lock(&lock[i]);//new added
     e->next = table[i];
     e->key = key;
     e->val = val;
     table[i] = e;
-    pthread_spin_unlock(&lock);//new added
+    pthread_spin_unlock(&lock[i]);//new added
 }
 
 // Retrieves an entry from the hash table by key
@@ -94,7 +94,10 @@ int main(int argc, char **argv) {
     }
 
     /*-----------start-----------*/
-    pthread_spin_init(&lock, 0);
+   
+    for(i=0;i<NUM_BUCKETS;i++){
+        pthread_spin_init(&lock[i], 0);
+    }
     /*----------- end -----------*/
 
     srandom(time(NULL));
@@ -145,6 +148,7 @@ int main(int argc, char **argv) {
 
 /*
 Q2:
+number of threads = 1024
 spin time: 2.539913
 mutex time: 2.738819
 At first, I thought mutex will be faster, and discovered that sleeping and waking the threads are expensive. 
