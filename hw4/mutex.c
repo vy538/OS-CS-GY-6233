@@ -49,6 +49,12 @@ void insert(int key, int val) {
 
 // Retrieves an entry from the hash table by key
 // Returns NULL if the key isn't found in the table
+/*
+for Q3:
+in this main example we don't need the lock, 
+but we may need the lock when reader and writer interact with 
+the system at the same time.
+*/
 bucket_entry * retrieve(int key) {
     /*-----------start-----------*/
     int i = key % NUM_BUCKETS;
@@ -169,3 +175,5 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+
